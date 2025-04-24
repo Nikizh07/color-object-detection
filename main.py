@@ -10,19 +10,7 @@ MODEL_PATH = "yolov8m.pt"
 VIDEO_SOURCE = "http://10.10.172.86:4747/video"
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-COCO_CLASSES = [
-    "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
-    "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
-    "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
-    "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat",
-    "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-    "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli",
-    "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed",
-    "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone",
-    "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-    "teddy bear", "hair drier", "toothbrush", "shoe", "hand", "face", "eye", "ear", "nose",
-    "mouth", "head", "neck", "shoulder", "elbow", "wrist", "hip", "knee", "ankle", "foot", "pen", "calculator" , "fan"
-]
+
 
 # Load YOLOv8 model
 model = YOLO(MODEL_PATH)
@@ -36,22 +24,37 @@ def get_dominant_color(image, k=3):
 
 def classify_color(rgb):
     """Classify a color based on its RGB values."""
-    r, g, b = rgb[2], rgb[1], rgb[0]  # Convert BGR to RGB
-    if r > 150 and g < 100 and b < 100:
-        return "red"
-    elif b > 150 and g < 100 and r < 100:
-        return "blue"
-    elif g > 150 and r < 100 and b < 100:
-        return "green"
-    elif r > 180 and g > 180 and b < 100:
-        return "yellow"
-    elif r > 200 and g > 200 and b > 200:
-        return "white"
-    elif r < 80 and g < 80 and b < 80:
+    bgr = np.uint8([[rgb]])  # Convert to OpenCV format
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)[0][0]
+    h, s, v = hsv
+
+    if v < 50:
         return "black"
+    if s < 50:
+        if v > 200:
+            return "white"
+        else:
+            return "gray"
+
+    if h < 15 or h > 160:
+        return "red"
+    elif 15 <= h < 35:
+        return "orange"
+    elif 35 <= h < 85:
+        return "yellow"
+    elif 85 <= h < 170:
+        return "green"
+    elif 170 <= h < 200:
+        return "cyan"
+    elif 200 <= h < 260:
+        return "blue"
+    elif 260 <= h < 300:
+        return "purple"
+    elif 300 <= h <= 345:
+        return "pink"
     else:
         return "unknown"
-
+    
 def capture_image(video_source, width, height):
     """Capture an image from the video source."""
     cap = cv2.VideoCapture(video_source)
@@ -103,8 +106,8 @@ def analyze_image(image, model, class_names):
             # Draw box and label
             cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 255), 2)
             label = f"{color_name} {class_name}"
-            cv2.putText(image, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.putText(image, "", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
 
     return image, object_counts
 
@@ -113,10 +116,12 @@ def main():
     captured_image = capture_image(VIDEO_SOURCE, FRAME_WIDTH, FRAME_HEIGHT)
 
     # Analyze image
-    labeled_image, object_counts = analyze_image(captured_image, model, COCO_CLASSES)
+    labeled_image, object_counts = analyze_image(captured_image, model, model.names)
 
     # Show final labeled image
     cv2.imshow("Detected Image", labeled_image)
+    # cv2.imshow("Detected Image", captured_image)
+
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
