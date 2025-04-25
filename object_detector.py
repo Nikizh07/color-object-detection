@@ -1,3 +1,4 @@
+# object_detector.py
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -66,21 +67,7 @@ def classify_color(bgr_color):
     else: return "unknown"
 
 
-def capture_frame_from_stream(video_source):
-    cap = cv2.VideoCapture(video_source)
-    if not cap.isOpened():
-        print(f"Error: Could not open video stream: {video_source}")
-        return None, f"Error: Could not open video stream: {video_source}"
-
-    ret, frame = cap.read()
-    cap.release()
-
-    if not ret:
-        print(f"Error: Failed to grab frame from {video_source}")
-        return None, f"Error: Failed to grab frame from {video_source}"
-
-    return frame, None
-
+# Removed capture_frame_from_stream as it's URL specific
 
 def analyze_image(image, model, class_names_map):
     if image is None:
